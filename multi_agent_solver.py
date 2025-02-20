@@ -10,14 +10,8 @@ class MultiAgentSolver:
         self.gold_found = False
 
     def update_agents(self):
-        print(self.agents)
-        print()
-        AgentKnowledge.print()
-        print()
         for i in range(len(self.agents)):
             self.agents[i].update_knowledge()
-
-        AgentKnowledge.print()
 
     def explore_multiply(self):
         unvisited_safe_rooms = set()
