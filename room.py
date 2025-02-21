@@ -57,7 +57,7 @@ class Room:
         return mask
 
     def __eq__(self, other):
-        return self.row_from_top == other.row_from_top and self.col_from_left == other.col_from_left
+        return other is not None and self.row_from_top == other.row_from_top and self.col_from_left == other.col_from_left
 
     def __hash__(self):
         return hash((self.row_from_top, self.col_from_left))

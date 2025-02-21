@@ -26,6 +26,9 @@ class AgentKnowledge:
         else:
             cls.pits_tracker.mark_not_sensed_at(visit_info.room)
 
+        cls.print()
+        print()
+
     @classmethod
     def safe_map(cls):
         return cls.wumpus_tracker.safe_map() & cls.pits_tracker.safe_map()
@@ -39,7 +42,9 @@ class AgentKnowledge:
 
         for room in Room.iter_all():
             char = ''
-            if cls.wumpus_tracker.known_wumpus_location is None and wumpus_unsafe_map.is_marked_at(room):
+            if cls.wumpus_tracker.known_wumpus_location == room:
+                char += 'W_'
+            elif wumpus_unsafe_map.is_marked_at(room):
                 char += 'W?'
             else:
                 char += '__'

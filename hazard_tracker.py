@@ -39,6 +39,9 @@ class HazardTracker:
     def sensed_area_map(self):
         return self.possibility_map | self.impossibility_map | AgentKnowledge.visited_map
 
+    def all_found(self):
+        raise NotImplementedError
+
     def safe_map(self):
         raise NotImplementedError
 
@@ -99,16 +102,17 @@ class PitsTracker(HazardTracker):
         super().__init__()
 
     def filtered_possible_pit_configurations(self):
-        known_wumpus_location = AgentKnowledge.wumpus_tracker.known_wumpus_location
-        wumpus_mask = known_wumpus_location.mask() if known_wumpus_location is not None else BinaryMap()
-
-        possible_pit_locations = self.filtered_possible_hazard_locations(other_occupied_map=wumpus_mask)
+        possible_pit_locations = self.filtered_possible_hazard_locations()
 
         return itertools.combinations(possible_pit_locations, self.num_pits)
 
     def get_pit_map(self):
         if self.known_pit_map is not None:
             return self.known_pit_map
+
+        # update wumpus location
+        if AgentKnowledge.wumpus_tracker.known_wumpus_location is not None:
+            self.impossibility_map.mark(AgentKnowledge.wumpus_tracker.known_wumpus_location)
 
         # check if there is only one configuration of possible pit locations
         possible_configurations = []
@@ -123,17 +127,23 @@ class PitsTracker(HazardTracker):
             if neighbors_mask & self.sense_map == self.sense_map:
                 possible_configurations.append(k_rooms)
 
-        if len(possible_configurations) == 1:
-            pits = list(possible_configurations[0])
-            self.known_pit_map = reduce(
-                lambda acc, room: acc | room.mask(),
-                pits,
-                BinaryMap()
-            )
+        assert len(possible_configurations) != 0
 
-            return self.known_pit_map
-        else:
-            return None
+        possible_pit_map = reduce(
+            lambda acc, rooms_in_configuration: acc | reduce(
+                lambda acc, room: acc | room.mask(),
+                rooms_in_configuration,
+                BinaryMap()
+            ),
+            possible_configurations,
+            BinaryMap()
+        )
+        self.impossibility_map |= ~possible_pit_map
+
+        if len(possible_configurations) == 1:
+            self.known_pit_map = possible_pit_map
+
+        return self.known_pit_map
 
     def safe_map(self):
         pit_map = self.get_pit_map()
