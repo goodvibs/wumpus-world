@@ -1,3 +1,6 @@
+from functools import reduce
+
+
 def calc_bitshift(room):
     return (3 - room.row_from_top) * 4 + (3 - room.col_from_left)
 
@@ -16,6 +19,14 @@ class BinaryMap:
         res.validate()
         return res
 
+    @classmethod
+    def from_rooms(cls, rooms):
+        return reduce(
+            lambda acc, room: acc | room.mask(),
+            rooms,
+            cls()
+        )
+
     def mark(self, room):
         shift = calc_bitshift(room)
         self.value |= 1 << shift
@@ -26,19 +37,19 @@ class BinaryMap:
         shift = calc_bitshift(room)
         return self.value & (1 << shift) != 0
 
-    def count_marked_rooms(self):
-        self.validate()
-        return self.value.bit_count()
-
-    def get_marked_rooms(self):
-        from room import Room
-
-        self.validate()
-        markings = []
-        for room in Room.iter_all():
-            if self.is_marked_at(room):
-                markings.append(room)
-        return markings
+    # def count_marked_rooms(self):
+    #     self.validate()
+    #     return self.value.bit_count()
+    #
+    # def get_marked_rooms(self):
+    #     from room import Room
+    #
+    #     self.validate()
+    #     markings = []
+    #     for room in Room.iter_all():
+    #         if self.is_marked_at(room):
+    #             markings.append(room)
+    #     return markings
 
     def validate(self):
         assert self.value & self.BITMASK == self.value

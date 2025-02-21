@@ -42,17 +42,22 @@ class AgentKnowledge:
 
         for room in Room.iter_all():
             char = ''
-            if cls.wumpus_tracker.known_wumpus_location == room:
-                char += 'W_'
-            elif wumpus_unsafe_map.is_marked_at(room):
-                char += 'W?'
+
+            if wumpus_unsafe_map.is_marked_at(room):
+                char += 'W'
+                if cls.wumpus_tracker.all_hazards_found:
+                    char += '_'
+                else:
+                    char += '?'
             else:
                 char += '__'
 
-            if cls.pits_tracker.known_pit_map is None and pit_unsafe_map.is_marked_at(room):
-                char += 'P?'
-            elif cls.pits_tracker.known_pit_map is not None and cls.pits_tracker.known_pit_map.is_marked_at(room):
-                char += 'P_'
+            if pit_unsafe_map.is_marked_at(room):
+                char += 'P'
+                if cls.pits_tracker.all_hazards_found:
+                    char += '_'
+                else:
+                    char += '?'
             else:
                 char += '__'
 

@@ -24,6 +24,8 @@ class HazardTracker:
         self.sense_map = BinaryMap()
         self.possibility_map = BinaryMap()
         self.impossibility_map = BinaryMap()
+        self.all_hazards_found = False
+        self.hazards_dangerous = True
 
     def mark_sensed_at(self, room):
         self.sense_map.mark(room)
@@ -39,11 +41,20 @@ class HazardTracker:
     def sensed_area_map(self):
         return self.possibility_map | self.impossibility_map | AgentKnowledge.visited_map
 
-    def all_found(self):
+    def deduce_hazard_locations(self):
         raise NotImplementedError
 
+    def unsafe_map(self):
+        if not self.hazards_dangerous:
+            return BinaryMap()
+
+        elif not self.all_hazards_found:
+            self.deduce_hazard_locations()
+
+        return self.naive_possible_hazard_map()
+
     def safe_map(self):
-        raise NotImplementedError
+        return ~self.unsafe_map()
 
     def filtered_possible_hazard_locations(self, other_occupied_map=BinaryMap()):
         possible_hazard_map = self.naive_possible_hazard_map() | ~self.sensed_area_map() & ~other_occupied_map
@@ -55,50 +66,27 @@ class HazardTracker:
 
 class WumpusTracker(HazardTracker):
 
-    def __init__(self):
-        self.known_wumpus_location = None
-        super().__init__()
+    def deduce_hazard_locations(self):
+        # check if there is only one configuration of possible wumpus location
+        possible_rooms = []
+        for room in self.filtered_possible_hazard_locations():
+            neighbors_mask = room.neighbors_mask()
+            if neighbors_mask & self.sense_map == self.sense_map:
+                possible_rooms.append(room)
 
-    def get_wumpus_location(self):
-        if self.known_wumpus_location is not None:
-            return self.known_wumpus_location
+        possible_wumpus_map = BinaryMap.from_rooms(possible_rooms)
 
-        naive_possible_wumpus_map = self.naive_possible_hazard_map()
-        num_possible_rooms = naive_possible_wumpus_map.count_marked_rooms()
+        self.impossibility_map |= ~possible_wumpus_map
 
-        if num_possible_rooms == 1:
-            self.known_wumpus_location = naive_possible_wumpus_map.get_marked_rooms()[0]
-            return self.known_wumpus_location
-
-        elif num_possible_rooms > 1:
-            # check if there is only one configuration of possible wumpus location
-            possible_rooms = []
-            for room in self.filtered_possible_hazard_locations():
-                neighbors_mask = room.neighbors_mask()
-                if neighbors_mask & self.sense_map == self.sense_map:
-                    possible_rooms.append(room)
-            
-            if len(possible_rooms) == 1:
-                self.known_wumpus_location = possible_rooms[0]
-                return self.known_wumpus_location
-            else:
-                return None
-        else:
-            return None
-
-    def safe_map(self):
-        if self.get_wumpus_location() is not None:
-            # wumpus is found and therefore dead
-            return ~BinaryMap()
-        else:
-            return ~self.naive_possible_hazard_map()
+        if len(possible_rooms) == 1:
+            self.all_hazards_found = True
+            self.hazards_dangerous = False
 
 
 class PitsTracker(HazardTracker):
     
     def __init__(self, num_pits):
         self.num_pits = num_pits
-        self.known_pit_map = None
         super().__init__()
 
     def filtered_possible_pit_configurations(self):
@@ -106,49 +94,32 @@ class PitsTracker(HazardTracker):
 
         return itertools.combinations(possible_pit_locations, self.num_pits)
 
-    def get_pit_map(self):
-        if self.known_pit_map is not None:
-            return self.known_pit_map
-
+    def deduce_hazard_locations(self):
         # update wumpus location
-        if AgentKnowledge.wumpus_tracker.known_wumpus_location is not None:
-            self.impossibility_map.mark(AgentKnowledge.wumpus_tracker.known_wumpus_location)
+        if AgentKnowledge.wumpus_tracker.all_hazards_found:
+            self.impossibility_map |= AgentKnowledge.wumpus_tracker.naive_possible_hazard_map()
 
         # check if there is only one configuration of possible pit locations
         possible_configurations = []
 
-        for k_rooms in self.filtered_possible_pit_configurations():
+        for room_combination in self.filtered_possible_pit_configurations():
             neighbors_mask = reduce(
                 lambda acc, room: acc | room.neighbors_mask(),
-                k_rooms,
+                room_combination,
                 BinaryMap()
             )
 
             if neighbors_mask & self.sense_map == self.sense_map:
-                possible_configurations.append(k_rooms)
+                possible_configurations.append(room_combination)
 
         assert len(possible_configurations) != 0
 
         possible_pit_map = reduce(
-            lambda acc, rooms_in_configuration: acc | reduce(
-                lambda acc, room: acc | room.mask(),
-                rooms_in_configuration,
-                BinaryMap()
-            ),
+            lambda acc, rooms_in_configuration: acc | BinaryMap.from_rooms(rooms_in_configuration),
             possible_configurations,
             BinaryMap()
         )
         self.impossibility_map |= ~possible_pit_map
 
         if len(possible_configurations) == 1:
-            self.known_pit_map = possible_pit_map
-
-        return self.known_pit_map
-
-    def safe_map(self):
-        pit_map = self.get_pit_map()
-
-        if pit_map is not None:
-            return ~pit_map
-        else:
-            return ~self.naive_possible_hazard_map()
+            self.all_hazards_found = True
