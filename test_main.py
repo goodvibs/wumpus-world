@@ -159,3 +159,43 @@ def test_case_16():
         [*"____"]
     ]
     assert wumpus_world(cave)
+
+
+def test_case_17():
+    cave = [
+        [*"__P_"],
+        [*"__PG"],
+        [*"____"],
+        [*"__PW"]
+    ]
+    assert not wumpus_world(cave)
+
+
+def test_case_18():
+    cave = [
+        [*"____"],
+        [*"___P"],
+        [*"____"],
+        [*"_PWG"]
+    ]
+    assert not wumpus_world(cave)
+
+
+def test_case_19():
+    cave = [
+        [*"____"],
+        [*"___P"],
+        [*"P_PG"],
+        [*"_W__"]
+    ]
+    assert not wumpus_world(cave)
+
+
+def test_case_20():
+    cave = [
+        [*"__PG"],
+        [*"___W"],
+        [*"__PP"],
+        [*"____"]
+    ]
+    assert wumpus_world(cave)
