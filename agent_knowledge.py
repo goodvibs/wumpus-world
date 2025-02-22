@@ -1,12 +1,12 @@
-from binary_map import BinaryMap
-from room import Room
+from cave_bit_map import CaveBitmap
+from cave_room import CaveRoom
 
 
 class AgentKnowledge:
     wumpus_tracker = None
     pits_tracker = None
 
-    visited_map = BinaryMap()
+    visited_map = CaveBitmap()
 
     @classmethod
     def is_room_visited(cls, room):
@@ -40,7 +40,7 @@ class AgentKnowledge:
         wumpus_unsafe_map = ~cls.wumpus_tracker.safe_map()
         pit_unsafe_map = ~cls.pits_tracker.safe_map()
 
-        for room in Room.iter_all():
+        for room in CaveRoom.iter_all():
             char = ''
 
             if wumpus_unsafe_map.is_marked_at(room):

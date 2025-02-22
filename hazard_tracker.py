@@ -2,8 +2,8 @@ import itertools
 from functools import reduce
 
 from agent_knowledge import AgentKnowledge
-from binary_map import BinaryMap
-from room import Room
+from cave_bit_map import CaveBitmap
+from cave_room import CaveRoom
 
 
 def mark_neighbors(map_, room):
@@ -12,7 +12,7 @@ def mark_neighbors(map_, room):
 
 
 def generate_all_possible_spawn_locations():
-    gen = Room.iter_all()
+    gen = CaveRoom.iter_all()
     next(gen)  # skip the first room
     return gen
 
@@ -21,32 +21,32 @@ class HazardTracker:
     ALL_POSSIBLE_SPAWN_LOCATIONS = list(generate_all_possible_spawn_locations())
 
     def __init__(self):
-        self.sense_map = BinaryMap()
-        self.possibility_map = BinaryMap()
-        self.impossibility_map = BinaryMap()
+        self.sense_map = CaveBitmap()
+        self.sense_adjacency_map = CaveBitmap()
+        self.impossibility_map = CaveBitmap()
         self.all_hazards_found = False
         self.hazards_dangerous = True
 
     def mark_sensed_at(self, room):
         self.sense_map.mark(room)
-        mark_neighbors(self.possibility_map, room)
+        mark_neighbors(self.sense_adjacency_map, room)
 
     def mark_not_sensed_at(self, room):
         # No need to mark the room itself, as we must already know it's safe
         mark_neighbors(self.impossibility_map, room)
 
     def naive_possible_hazard_map(self):
-        return self.possibility_map & ~self.impossibility_map & ~AgentKnowledge.visited_map
+        return self.sense_adjacency_map & ~self.impossibility_map & ~AgentKnowledge.visited_map
 
     def sensed_area_map(self):
-        return self.possibility_map | self.impossibility_map | AgentKnowledge.visited_map
+        return self.sense_adjacency_map | self.impossibility_map | AgentKnowledge.visited_map
 
     def deduce_hazard_locations(self):
         raise NotImplementedError
 
     def unsafe_map(self):
         if not self.hazards_dangerous:
-            return BinaryMap()
+            return CaveBitmap()
 
         elif not self.all_hazards_found:
             self.deduce_hazard_locations()
@@ -56,7 +56,7 @@ class HazardTracker:
     def safe_map(self):
         return ~self.unsafe_map()
 
-    def filtered_possible_hazard_locations(self, other_occupied_map=BinaryMap()):
+    def filtered_possible_hazard_locations(self, other_occupied_map=CaveBitmap()):
         possible_hazard_map = self.naive_possible_hazard_map() | ~self.sensed_area_map() & ~other_occupied_map
         return filter(
             lambda room: possible_hazard_map.is_marked_at(room),
@@ -74,7 +74,7 @@ class WumpusTracker(HazardTracker):
             if neighbors_mask & self.sense_map == self.sense_map:
                 possible_rooms.append(room)
 
-        possible_wumpus_map = BinaryMap.from_rooms(possible_rooms)
+        possible_wumpus_map = CaveBitmap.from_rooms(possible_rooms)
         self.impossibility_map |= ~possible_wumpus_map
 
         if len(possible_rooms) == 1:
@@ -105,7 +105,7 @@ class PitsTracker(HazardTracker):
             neighbors_mask = reduce(
                 lambda acc, room: acc | room.neighbors_mask(),
                 room_combination,
-                BinaryMap()
+                CaveBitmap()
             )
 
             if neighbors_mask & self.sense_map == self.sense_map:
@@ -114,9 +114,9 @@ class PitsTracker(HazardTracker):
         assert len(possible_configurations) != 0
 
         possible_pit_map = reduce(
-            lambda acc, rooms_in_configuration: acc | BinaryMap.from_rooms(rooms_in_configuration),
+            lambda acc, rooms_in_configuration: acc | CaveBitmap.from_rooms(rooms_in_configuration),
             possible_configurations,
-            BinaryMap()
+            CaveBitmap()
         )
         self.impossibility_map |= ~possible_pit_map
 

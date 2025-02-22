@@ -1,9 +1,9 @@
 from agent_knowledge import AgentKnowledge
-from binary_map import BinaryMap
+from cave_bit_map import CaveBitmap
 from cave_info import CaveInfo
+from cave_room import CaveRoom
 from hazard_tracker import WumpusTracker, PitsTracker
 from multi_agent_solver import MultiAgentSolver
-from room import Room
 
 
 def create_sense_map(sources):
@@ -11,7 +11,7 @@ def create_sense_map(sources):
     for source in sources:
         sensing_rooms.extend(source.neighbors())
 
-    sensing_map = BinaryMap()
+    sensing_map = CaveBitmap()
 
     for sensing_room in sensing_rooms:
         sensing_map.mark(sensing_room)
@@ -20,7 +20,7 @@ def create_sense_map(sources):
 
 
 def wumpus_world(cave_map):
-    for room in Room.iter_all():
+    for room in CaveRoom.iter_all():
         room_char = cave_map[room.row_from_top][room.col_from_left]
 
         if room_char == 'W':
@@ -41,61 +41,12 @@ def wumpus_world(cave_map):
 
 
 def main():
-    # cave = [
-    #     [*"____"],
-    #     [*"_W__"],
-    #     [*"___G"],
-    #     [*"P___"]
-    # ]
-
-    # cave = [
-    #     [*"____"],
-    #     [*"_P__"],
-    #     [*"____"],
-    #     [*"_W_G"]
-    # ]
-
-    # cave = [
-    #     [*"____"],
-    #     [*"____"],
-    #     [*"W__P"],
-    #     [*"__PG"]
-    # ]
-
-    # cave = [
-    #     [*"__W_"],
-    #     [*"____"],
-    #     [*"_PPP"],
-    #     [*"___G"]
-    # ]
-
     cave = [
         [*"__GP"],
         [*"_P__"],
         [*"W___"],
         [*"____"]
     ]
-
-    # cave = [
-    #     [*"___W"],
-    #     [*"__P_"],
-    #     [*"__G_"],
-    #     [*"P___"]
-    # ]
-
-    # cave = [
-    #     [*"__WP"],
-    #     [*"_P__"],
-    #     [*"____"],
-    #     [*"_G__"]
-    # ]
-
-    # cave = [
-    #     [*"__PG"],
-    #     [*"___W"],
-    #     [*"__PP"],
-    #     [*"____"]
-    # ]
 
     assert wumpus_world(cave) is True
 

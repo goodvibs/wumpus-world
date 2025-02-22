@@ -1,10 +1,10 @@
 from agent_knowledge import AgentKnowledge
 from cave_info import CaveInfo
-from room import Room, VisitInfo
+from cave_room import CaveRoom, VisitInfo
 
 
 class Agent:
-    def __init__(self, room=Room(0, 0)):
+    def __init__(self, room=CaveRoom(0, 0)):
         self.location = room
 
     def senses_smell(self):

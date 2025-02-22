@@ -1,8 +1,8 @@
-from binary_map import BinaryMap
+from cave_bit_map import CaveBitmap
 
 
-class Room:
-    neighbors_memo = [[None for _ in range(4)] for _ in range(4)]
+class CaveRoom:
+    neighbors_lookup = [[None for _ in range(4)] for _ in range(4)]
 
     def __init__(self, row_from_top, col_from_left):
         self.row_from_top = row_from_top
@@ -13,45 +13,37 @@ class Room:
         if self.row_from_top == 0:
             return None
         else:
-            return Room(self.row_from_top - 1, self.col_from_left)
+            return CaveRoom(self.row_from_top - 1, self.col_from_left)
 
     def down(self):
         if self.row_from_top == 3:
             return None
         else:
-            return Room(self.row_from_top + 1, self.col_from_left)
+            return CaveRoom(self.row_from_top + 1, self.col_from_left)
 
     def left(self):
         if self.col_from_left == 0:
             return None
         else:
-            return Room(self.row_from_top, self.col_from_left - 1)
+            return CaveRoom(self.row_from_top, self.col_from_left - 1)
 
     def right(self):
         if self.col_from_left == 3:
             return None
         else:
-            return Room(self.row_from_top, self.col_from_left + 1)
+            return CaveRoom(self.row_from_top, self.col_from_left + 1)
+
+    def calc_neighbors(self):
+        return [direction() for direction in self.directions if direction() is not None]
 
     def neighbors(self):
-        memo_lookup = self.neighbors_memo[self.row_from_top][self.col_from_left]
-
-        if memo_lookup is not None:
-            return memo_lookup
-        else:
-            res = []
-            for direction in self.directions:
-                next_room = direction()
-                if next_room is not None:
-                    res.append(next_room)
-            self.neighbors_memo[self.row_from_top][self.col_from_left] = res
-            return res
+        return CaveRoom.neighbors_lookup[self.row_from_top][self.col_from_left]
 
     def mask(self):
-        return BinaryMap.from_room(self)
+        return CaveBitmap.from_room(self)
 
     def neighbors_mask(self):
-        mask = BinaryMap()
+        mask = CaveBitmap()
         for neighbor in self.neighbors():
             mask |= neighbor.mask()
         return mask
@@ -71,6 +63,11 @@ class Room:
             cls(row_from_top, col_from_side) for row_from_top in range(4) for col_from_side in range(4)
         )
 
+    @classmethod
+    def initialize_neighbors_lookup(cls):
+        for room in cls.iter_all():
+            cls.neighbors_lookup[room.row_from_top][room.col_from_left] = room.calc_neighbors()
+
 
 class VisitInfo:
     def __init__(self, room, has_smell, has_wind):
@@ -80,3 +77,7 @@ class VisitInfo:
 
     def __eq__(self, other):
         return self.room == other.room and self.has_smell == other.has_smell and self.has_wind == other.has_wind
+
+
+# Initialize the neighbors_lookup after the class definition
+CaveRoom.initialize_neighbors_lookup()

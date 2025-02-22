@@ -5,8 +5,13 @@ def calc_bitshift(room):
     return (3 - room.row_from_top) * 4 + (3 - room.col_from_left)
 
 
-class BinaryMap:
-    BITMASK = 0b1111_1111_1111_1111
+def validate(bitmap):
+    bitmap.validate()
+    return bitmap
+
+
+class CaveBitmap:
+    BITMASK = 0xFFFF
 
     def __init__(self, value=0):
         self.value = value
@@ -15,55 +20,38 @@ class BinaryMap:
     def from_room(cls, room):
         res = cls()
         res.mark(room)
-        res.validate()
-        return res
+        return validate(res)
 
     @classmethod
     def from_rooms(cls, rooms):
-        res = reduce(
+        return validate(reduce(
             lambda acc, room: acc | room.mask(),
             rooms,
             cls()
-        )
-        res.validate()
-        return res
+        ))
 
     def mark(self, room):
-        shift = calc_bitshift(room)
-        self.value |= 1 << shift
+        self.value |= 1 << calc_bitshift(room)
         self.validate()
 
     def is_marked_at(self, room):
         self.validate()
-        shift = calc_bitshift(room)
-        return self.value & (1 << shift) != 0
+        return self.value & (1 << calc_bitshift(room)) != 0
 
     def validate(self):
         assert self.value & self.BITMASK == self.value
 
     def __invert__(self):
-        self.validate()
-        res = BinaryMap(value=~self.value & self.BITMASK)
-        res.validate()
-        return res
+        return validate(CaveBitmap(value=~self.value & self.BITMASK))
 
     def __and__(self, other):
-        self.validate()
-        res = BinaryMap(value=self.value & other.value)
-        res.validate()
-        return res
+        return validate(CaveBitmap(value=self.value & other.value))
 
     def __or__(self, other):
-        self.validate()
-        res = BinaryMap(value=self.value | other.value)
-        res.validate()
-        return res
+        return validate(CaveBitmap(value=self.value | other.value))
 
     def __xor__(self, other):
-        self.validate()
-        res = BinaryMap(value=self.value ^ other.value)
-        res.validate()
-        return res
+        return validate(CaveBitmap(value=self.value ^ other.value))
 
     def __repr__(self):
         self.validate()
@@ -73,5 +61,8 @@ class BinaryMap:
     def __eq__(self, other):
         if other is None:
             return False
+
+        self.validate()
+        other.validate()
 
         return self.value == other.value
