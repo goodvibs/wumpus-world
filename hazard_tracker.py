@@ -75,7 +75,6 @@ class WumpusTracker(HazardTracker):
                 possible_rooms.append(room)
 
         possible_wumpus_map = BinaryMap.from_rooms(possible_rooms)
-
         self.impossibility_map |= ~possible_wumpus_map
 
         if len(possible_rooms) == 1:
