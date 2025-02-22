@@ -85,15 +85,12 @@ class PitsTracker(HazardTracker):
     def filtered_possible_pit_configurations(self):
         possible_pit_locations = self.filtered_possible_hazard_locations()
 
-        possible_pit_configurations = self.pit_configurations_cache.get(possible_pit_locations)
-
-        if possible_pit_configurations is None:
-            possible_pit_configurations = list(
+        if possible_pit_locations not in self.pit_configurations_cache:
+            self.pit_configurations_cache[possible_pit_locations] = list(
                 itertools.combinations(possible_pit_locations, self.num_pits)
             )
-            self.pit_configurations_cache[possible_pit_locations] = possible_pit_configurations
 
-        return possible_pit_configurations
+        return self.pit_configurations_cache[possible_pit_locations]
 
     def deduce_hazard_locations(self):
         # update wumpus location
