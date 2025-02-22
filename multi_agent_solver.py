@@ -1,5 +1,4 @@
 from agent import Agent
-from agent_knowledge import AgentKnowledge
 from cave_info import CaveInfo
 
 
