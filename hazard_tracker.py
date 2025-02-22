@@ -75,6 +75,8 @@ class WumpusTracker(HazardTracker):
 
 
 class PitsTracker(HazardTracker):
+
+    pit_configurations_cache = {}
     
     def __init__(self, num_pits, search_knowledge):
         self.num_pits = num_pits
@@ -83,7 +85,15 @@ class PitsTracker(HazardTracker):
     def filtered_possible_pit_configurations(self):
         possible_pit_locations = self.filtered_possible_hazard_locations()
 
-        return itertools.combinations(possible_pit_locations, self.num_pits)
+        possible_pit_configurations = self.pit_configurations_cache.get(possible_pit_locations)
+
+        if possible_pit_configurations is None:
+            possible_pit_configurations = list(
+                itertools.combinations(possible_pit_locations, self.num_pits)
+            )
+            self.pit_configurations_cache[possible_pit_locations] = possible_pit_configurations
+
+        return possible_pit_configurations
 
     def deduce_hazard_locations(self):
         # update wumpus location
@@ -91,7 +101,8 @@ class PitsTracker(HazardTracker):
             self.impossibility_map |= self.search_knowledge.wumpus_tracker.naive_possible_hazard_map()
 
         # check if there is only one configuration of possible pit locations
-        possible_configurations = []
+        num_possible_configurations = 0
+        possible_pit_map = CaveBitmap()
 
         for room_combination in self.filtered_possible_pit_configurations():
             neighbors_mask = reduce(
@@ -101,16 +112,12 @@ class PitsTracker(HazardTracker):
             )
 
             if neighbors_mask & self.sense_map == self.sense_map:
-                possible_configurations.append(room_combination)
+                possible_pit_map |= CaveBitmap.from_rooms(room_combination)
+                num_possible_configurations += 1
 
-        assert len(possible_configurations) != 0
+        assert num_possible_configurations != 0
 
-        possible_pit_map = reduce(
-            lambda acc, rooms_in_configuration: acc | CaveBitmap.from_rooms(rooms_in_configuration),
-            possible_configurations,
-            CaveBitmap()
-        )
-        self.impossibility_map |= ~possible_pit_map
-
-        if len(possible_configurations) == 1:
+        if num_possible_configurations == 1:
             self.all_hazards_found = True
+
+        self.impossibility_map |= ~possible_pit_map
