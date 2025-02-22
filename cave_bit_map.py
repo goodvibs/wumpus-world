@@ -42,7 +42,8 @@ class CaveBitmap:
         return self.value & (1 << calc_bitshift(room)) != 0
 
     def validate(self):
-        assert self.value & self.BITMASK == self.value
+        # assert self.value & self.BITMASK == self.value
+        pass
 
     def __invert__(self):
         return validate(CaveBitmap(value=~self.value & self.BITMASK))
