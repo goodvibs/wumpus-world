@@ -1,7 +1,6 @@
 import itertools
 from functools import reduce
 
-from agent_knowledge import AgentKnowledge
 from cave_bit_map import CaveBitmap
 from cave_room import CaveRoom
 
@@ -20,7 +19,8 @@ def generate_all_possible_spawn_locations():
 class HazardTracker:
     ALL_POSSIBLE_SPAWN_LOCATIONS = list(generate_all_possible_spawn_locations())
 
-    def __init__(self):
+    def __init__(self, search_knowledge):
+        self.search_knowledge = search_knowledge
         self.sense_map = CaveBitmap()
         self.sense_adjacency_map = CaveBitmap()
         self.impossibility_map = CaveBitmap()
@@ -36,10 +36,10 @@ class HazardTracker:
         mark_neighbors(self.impossibility_map, room)
 
     def naive_possible_hazard_map(self):
-        return self.sense_adjacency_map & ~self.impossibility_map & ~AgentKnowledge.visited_map
+        return self.sense_adjacency_map & ~self.impossibility_map & ~self.search_knowledge.visited_map
 
     def sensed_area_map(self):
-        return self.sense_adjacency_map | self.impossibility_map | AgentKnowledge.visited_map
+        return self.sense_adjacency_map | self.impossibility_map | self.search_knowledge.visited_map
 
     def deduce_hazard_locations(self):
         raise NotImplementedError
@@ -84,9 +84,9 @@ class WumpusTracker(HazardTracker):
 
 class PitsTracker(HazardTracker):
     
-    def __init__(self, num_pits):
+    def __init__(self, num_pits, search_knowledge):
         self.num_pits = num_pits
-        super().__init__()
+        super().__init__(search_knowledge)
 
     def filtered_possible_pit_configurations(self):
         possible_pit_locations = self.filtered_possible_hazard_locations()
@@ -95,8 +95,8 @@ class PitsTracker(HazardTracker):
 
     def deduce_hazard_locations(self):
         # update wumpus location
-        if AgentKnowledge.wumpus_tracker.all_hazards_found:
-            self.impossibility_map |= AgentKnowledge.wumpus_tracker.naive_possible_hazard_map()
+        if self.search_knowledge.wumpus_tracker.all_hazards_found:
+            self.impossibility_map |= self.search_knowledge.wumpus_tracker.naive_possible_hazard_map()
 
         # check if there is only one configuration of possible pit locations
         possible_configurations = []
