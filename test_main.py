@@ -199,3 +199,23 @@ def test_case_20():
         [*"____"]
     ]
     assert wumpus_world(cave)
+
+
+def test_case_21():
+    cave = [
+        [*"__P_"],
+        [*"____"],
+        [*"_PW_"],
+        [*"___G"]
+    ]
+    assert wumpus_world(cave)
+
+
+def test_case_22():
+    cave = [
+        [*"____"],
+        [*"_PG_"],
+        [*"__P_"],
+        [*"_W__"]
+    ]
+    assert not wumpus_world(cave)

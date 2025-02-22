@@ -50,7 +50,7 @@ class HazardTracker:
     def filtered_possible_hazard_locations(self, other_occupied_map=CaveBitmap()):
         possible_hazard_map = self.naive_possible_hazard_map() | ~self.sensed_area_map() & ~other_occupied_map
 
-        return frozenset(
+        return list(
             room for room in self.ALL_POSSIBLE_SPAWN_LOCATIONS
             if possible_hazard_map.is_marked_at(room)
         )
@@ -74,9 +74,33 @@ class WumpusTracker(HazardTracker):
             self.hazards_dangerous = False
 
 
+def calc_key(possible_pit_locations):
+    return CaveBitmap.from_rooms(possible_pit_locations).value
+
+
+class PitConfigurationsCache:
+    def __init__(self):
+        self.cache = [None for _ in range(2 ** 16)]
+
+    def lookup(self, possible_pit_locations):
+        key = calc_key(possible_pit_locations)
+        return self.cache[key]
+
+    def store(self, possible_pit_locations, configurations):
+        key = calc_key(possible_pit_locations)
+        self.cache[key] = configurations
+
+    def __getitem__(self, possible_pit_locations):
+        print(possible_pit_locations)
+        return self.lookup(possible_pit_locations)
+
+    def __setitem__(self, possible_pit_locations, configurations):
+        self.store(possible_pit_locations, configurations)
+
+
 class PitsTracker(HazardTracker):
 
-    pit_configurations_cache = {}
+    pit_configurations_caches = [PitConfigurationsCache() for _ in range(3)]
     
     def __init__(self, num_pits, search_knowledge):
         self.num_pits = num_pits
@@ -85,12 +109,15 @@ class PitsTracker(HazardTracker):
     def filtered_possible_pit_configurations(self):
         possible_pit_locations = self.filtered_possible_hazard_locations()
 
-        if possible_pit_locations not in self.pit_configurations_cache:
-            self.pit_configurations_cache[possible_pit_locations] = list(
+        cache_index = self.num_pits - 1
+        cache_lookup = self.pit_configurations_caches[cache_index][possible_pit_locations]
+
+        if cache_lookup is None:
+            self.pit_configurations_caches[cache_index][possible_pit_locations] = cache_lookup = list(
                 itertools.combinations(possible_pit_locations, self.num_pits)
             )
 
-        return self.pit_configurations_cache[possible_pit_locations]
+        return cache_lookup
 
     def deduce_hazard_locations(self):
         # update wumpus location
