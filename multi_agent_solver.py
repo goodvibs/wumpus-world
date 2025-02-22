@@ -20,19 +20,18 @@ class MultiAgentSolver:
             unvisited_safe_neighbors = agent.unvisited_safe_neighbors()
             unvisited_safe_rooms = unvisited_safe_rooms.union(unvisited_safe_neighbors)
 
-        initial_knowledge_hash = hash(AgentKnowledge)
-
+        new_agents = []
         for room in unvisited_safe_rooms:
             if room == CaveInfo.gold:
                 self.gold_found = True
                 return False
             new_agent = Agent(room=room)
-            new_agent.update_knowledge()
-            self.agents.append(new_agent)
+            new_agents.append(new_agent)
 
+        self.agents.extend(new_agents)
         self.update_agents()
 
-        return len(unvisited_safe_rooms) > 0 or initial_knowledge_hash != hash(AgentKnowledge)
+        return len(new_agents) > 0
 
     def run(self):
         while self.explore_multiply():
