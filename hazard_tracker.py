@@ -1,5 +1,5 @@
 import itertools
-from functools import reduce, lru_cache
+from functools import reduce
 
 from cave_bit_map import CaveBitmap
 from cave_room import CaveRoom
@@ -49,9 +49,10 @@ class HazardTracker:
 
     def filtered_possible_hazard_locations(self, other_occupied_map=CaveBitmap()):
         possible_hazard_map = self.naive_possible_hazard_map() | ~self.sensed_area_map() & ~other_occupied_map
-        return filter(
-            lambda room: possible_hazard_map.is_marked_at(room),
-            self.ALL_POSSIBLE_SPAWN_LOCATIONS
+
+        return frozenset(
+            room for room in self.ALL_POSSIBLE_SPAWN_LOCATIONS
+            if possible_hazard_map.is_marked_at(room)
         )
 
 
