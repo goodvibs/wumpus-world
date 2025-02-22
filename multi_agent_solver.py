@@ -37,7 +37,8 @@ class MultiAgentSolver:
 
     def run(self):
         while self.explore_multiply():
-            self.search_knowledge.print()
-            print()
+            # self.search_knowledge.print()
+            # print()
+            pass
 
         return self.gold_found

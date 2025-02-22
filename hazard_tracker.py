@@ -91,7 +91,6 @@ class PitConfigurationsCache:
         self.cache[key] = configurations
 
     def __getitem__(self, possible_pit_locations):
-        print(possible_pit_locations)
         return self.lookup(possible_pit_locations)
 
     def __setitem__(self, possible_pit_locations, configurations):
