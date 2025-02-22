@@ -34,6 +34,9 @@ class CaveBitmap:
         self.value |= 1 << calc_bitshift(room)
         self.validate()
 
+    def mark_neighbors(self, room):
+        self.value |= room.neighbors_mask().value
+
     def is_marked_at(self, room):
         self.validate()
         return self.value & (1 << calc_bitshift(room)) != 0

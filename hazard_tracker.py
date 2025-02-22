@@ -1,23 +1,14 @@
 import itertools
-from functools import reduce
+from functools import reduce, lru_cache
 
 from cave_bit_map import CaveBitmap
 from cave_room import CaveRoom
 
 
-def mark_neighbors(map_, room):
-    for neighbor in room.neighbors():
-        map_.mark(neighbor)
-
-
-def generate_all_possible_spawn_locations():
-    gen = CaveRoom.iter_all()
-    next(gen)  # skip the first room
-    return gen
-
-
 class HazardTracker:
-    ALL_POSSIBLE_SPAWN_LOCATIONS = list(generate_all_possible_spawn_locations())
+    ALL_POSSIBLE_SPAWN_LOCATIONS = frozenset(
+        location for i, location in enumerate(CaveRoom.iter_all()) if i > 0
+    )
 
     def __init__(self, search_knowledge):
         self.search_knowledge = search_knowledge
@@ -29,11 +20,11 @@ class HazardTracker:
 
     def mark_sensed_at(self, room):
         self.sense_map.mark(room)
-        mark_neighbors(self.sense_adjacency_map, room)
+        self.sense_adjacency_map.mark_neighbors(room)
 
     def mark_not_sensed_at(self, room):
         # No need to mark the room itself, as we must already know it's safe
-        mark_neighbors(self.impossibility_map, room)
+        self.impossibility_map.mark_neighbors(room)
 
     def naive_possible_hazard_map(self):
         return self.sense_adjacency_map & ~self.impossibility_map & ~self.search_knowledge.visited_map
