@@ -18,17 +18,13 @@ class CaveBitmap:
 
     @classmethod
     def from_room(cls, room):
-        res = cls()
-        res.mark(room)
-        return validate(res)
+        return validate(cls(1 << calc_bitshift(room)))
 
     @classmethod
     def from_rooms(cls, rooms):
-        return validate(reduce(
-            lambda acc, room: acc | room.mask(),
-            rooms,
-            cls()
-        ))
+        return validate(cls(sum(
+            cls.from_room(room).value for room in rooms
+        )))
 
     def mark(self, room):
         self.value |= 1 << calc_bitshift(room)
