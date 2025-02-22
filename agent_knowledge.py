@@ -26,9 +26,6 @@ class AgentKnowledge:
         else:
             cls.pits_tracker.mark_not_sensed_at(visit_info.room)
 
-        cls.print()
-        print()
-
     @classmethod
     def safe_map(cls):
         return cls.wumpus_tracker.safe_map() & cls.pits_tracker.safe_map()
