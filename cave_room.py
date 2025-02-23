@@ -3,6 +3,7 @@ from cave_bit_map import CaveBitmap
 
 class CaveRoom:
     neighbors_lookup = [[None for _ in range(4)] for _ in range(4)]
+    neighbors_mask_lookup = [[None for _ in range(4)] for _ in range(4)]
 
     def __init__(self, row_from_top, col_from_left):
         self.row_from_top = row_from_top
@@ -43,6 +44,9 @@ class CaveRoom:
         return CaveBitmap.from_room(self)
 
     def neighbors_mask(self):
+        return CaveRoom.neighbors_mask_lookup[self.row_from_top][self.col_from_left]
+
+    def calc_neighbors_mask(self):
         self_mask_value = self.mask().value
 
         left_mask_value = (self_mask_value << 1) & ~0x1111
@@ -73,6 +77,11 @@ class CaveRoom:
         for room in cls.iter_all():
             cls.neighbors_lookup[room.row_from_top][room.col_from_left] = room.calc_neighbors()
 
+    @classmethod
+    def initialize_neighbors_mask_lookup(cls):
+        for room in cls.iter_all():
+            cls.neighbors_mask_lookup[room.row_from_top][room.col_from_left] = room.calc_neighbors_mask()
+
 
 class VisitInfo:
     def __init__(self, room, has_smell, has_wind):
@@ -84,5 +93,6 @@ class VisitInfo:
         return self.room == other.room and self.has_smell == other.has_smell and self.has_wind == other.has_wind
 
 
-# Initialize the neighbors_lookup after the class definition
+# Initialize after the class definition
 CaveRoom.initialize_neighbors_lookup()
+CaveRoom.initialize_neighbors_mask_lookup()
