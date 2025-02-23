@@ -100,10 +100,23 @@ class PitConfigurationsCache:
 class PitsTracker(HazardTracker):
 
     pit_configurations_caches = [PitConfigurationsCache() for _ in range(3)]
+    k_rooms_combination_neighbors_mask_cache = {}
     
     def __init__(self, num_pits, search_knowledge):
         self.num_pits = num_pits
         super().__init__(search_knowledge)
+
+    @classmethod
+    def k_rooms_combination_neighbors_mask(cls, rooms_combination):
+        cache_lookup = cls.k_rooms_combination_neighbors_mask_cache.get(rooms_combination)
+        if cache_lookup is None:
+            cls.k_rooms_combination_neighbors_mask_cache[rooms_combination] = cache_lookup = reduce(
+                lambda acc, room: acc | room.neighbors_mask(),
+                rooms_combination,
+                CaveBitmap()
+            )
+
+        return cache_lookup
 
     def filtered_possible_pit_configurations(self):
         possible_pit_locations = self.filtered_possible_hazard_locations()
@@ -112,7 +125,7 @@ class PitsTracker(HazardTracker):
         cache_lookup = self.pit_configurations_caches[cache_index][possible_pit_locations]
 
         if cache_lookup is None:
-            self.pit_configurations_caches[cache_index][possible_pit_locations] = cache_lookup = list(
+            self.pit_configurations_caches[cache_index][possible_pit_locations] = cache_lookup = frozenset(
                 itertools.combinations(possible_pit_locations, self.num_pits)
             )
 
@@ -128,11 +141,7 @@ class PitsTracker(HazardTracker):
         possible_pit_map = CaveBitmap()
 
         for room_combination in self.filtered_possible_pit_configurations():
-            neighbors_mask = reduce(
-                lambda acc, room: acc | room.neighbors_mask(),
-                room_combination,
-                CaveBitmap()
-            )
+            neighbors_mask = self.k_rooms_combination_neighbors_mask(room_combination)
 
             if neighbors_mask & self.sense_map == self.sense_map:
                 possible_pit_map |= CaveBitmap.from_rooms(room_combination)

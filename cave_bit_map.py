@@ -1,6 +1,3 @@
-from functools import reduce
-
-
 def calc_bitshift(room):
     return (3 - room.row_from_top) * 4 + (3 - room.col_from_left)
 
