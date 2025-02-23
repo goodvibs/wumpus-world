@@ -1,6 +1,7 @@
 from cave_bit_map import CaveBitmap
 from cave_room import CaveRoom
-from hazard_tracker import WumpusTracker, PitsTracker
+from wumpus_tracker import WumpusTracker
+from pits_tracker import PitsTracker
 
 
 class SearchKnowledge:
