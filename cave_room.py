@@ -43,10 +43,15 @@ class CaveRoom:
         return CaveBitmap.from_room(self)
 
     def neighbors_mask(self):
-        mask = CaveBitmap()
-        for neighbor in self.neighbors():
-            mask |= neighbor.mask()
-        return mask
+        self_mask_value = self.mask().value
+
+        left_mask_value = (self_mask_value << 1) & ~0x1111
+        right_mask_value = (self_mask_value >> 1) & ~0x8888
+        up_mask_value = self_mask_value << 4
+        down_mask_value = self_mask_value >> 4
+
+        mask_value = (left_mask_value | right_mask_value | up_mask_value | down_mask_value) & CaveBitmap.BITMASK
+        return CaveBitmap(mask_value)
 
     def __eq__(self, other):
         return other is not None and self.row_from_top == other.row_from_top and self.col_from_left == other.col_from_left
