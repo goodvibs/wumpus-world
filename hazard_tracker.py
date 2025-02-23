@@ -39,6 +39,9 @@ class HazardTracker:
         elif not self.all_hazards_found:
             self.deduce_hazard_locations()
 
+            if not self.hazards_dangerous:
+                return CaveBitmap()
+
         return self.naive_possible_hazard_map()
 
     def safe_map(self):

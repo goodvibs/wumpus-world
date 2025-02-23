@@ -18,7 +18,6 @@ class MultiAgentSolver:
 
     def update_safe_map(self):
         self.safe_map = self.search_knowledge.safe_map()
-        self.safe_map = self.search_knowledge.safe_map()
 
     def update(self):
         self.update_agents()
